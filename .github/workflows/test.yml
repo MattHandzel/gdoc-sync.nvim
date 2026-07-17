@@ -22,4 +22,4 @@ jobs:
       - name: Help file loads
         run: |
           nvim --headless --clean -u tests/minimal_init.lua \
-            -c "helptags doc" -c "help gdoc-sync" -c "q" && echo "help ok"
+            -c "helptags doc" -c "help gdoc-sync" -c "qa!" && echo "help ok"
