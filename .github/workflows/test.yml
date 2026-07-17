@@ -1,0 +1,25 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        neovim: [stable, nightly]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: rhysd/action-setup-vim@v1
+        with:
+          neovim: true
+          version: ${{ matrix.neovim }}
+      - name: Run test suite (module load + stub CLI)
+        run: tests/run.sh
+      - name: Help file loads
+        run: |
+          nvim --headless --clean -u tests/minimal_init.lua \
+            -c "helptags doc" -c "help gdoc-sync" -c "q" && echo "help ok"

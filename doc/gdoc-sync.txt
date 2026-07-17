@@ -1,0 +1,98 @@
+*gdoc-sync.txt*  Sync markdown buffers with Google Docs        *gdoc-sync.nvim*
+
+Author:  Matt Handzel
+License: MIT
+
+==============================================================================
+CONTENTS                                                    *gdoc-sync-contents*
+
+  1. Introduction ................ |gdoc-sync-introduction|
+  2. Requirements ................ |gdoc-sync-requirements|
+  3. Commands .................... |gdoc-sync-commands|
+  4. Configuration ............... |gdoc-sync-configuration|
+  5. Statusline .................. |gdoc-sync-statusline|
+
+==============================================================================
+1. INTRODUCTION                                         *gdoc-sync-introduction*
+
+gdoc-sync.nvim wraps the gdoc-sync CLI (https://github.com/MattHandzel/gdoc-sync)
+so the markdown buffer you are editing can become — and stay — a Google Doc:
+create, push, pull (with reviewers' comments as CriticMarkup), diff, share,
+export, and live watch. Every call is asynchronous; the editor never blocks
+on the network.
+
+==============================================================================
+2. REQUIREMENTS                                         *gdoc-sync-requirements*
+
+- Neovim >= 0.9
+- gdoc-sync CLI >= 0.5 on $PATH, authenticated (`gdoc-sync auth`)
+
+Run |:checkhealth| gdoc-sync to verify both.
+
+==============================================================================
+3. COMMANDS                                                 *gdoc-sync-commands*
+
+All commands operate on the current buffer's file.                     *:Gdoc*
+
+:Gdoc create [flags]     Create a Google Doc from the buffer. The URL is
+                         copied to the clipboard by the CLI. Flags are passed
+                         through (--private, --view, --edit, --open,
+                         --title {t}).
+
+:Gdoc push               Push local content to the linked doc. If the remote
+                         changed since your last pull, you are prompted
+                         before it is overwritten.
+
+:Gdoc pull               Pull the doc (comments arrive as {>>...<<} markers)
+                         and reload the buffer. Prompts if the buffer has
+                         unsaved changes.
+
+:Gdoc status [--remote]  Every linked file in a floating window; --remote
+                         asks Google which ones drifted.
+
+:Gdoc diff               Unified diff of local vs. remote in a split;
+                         q closes it. "No differences" is a notification.
+
+:Gdoc open               Open the linked doc in the browser.
+
+:Gdoc share {arg}        view|comment|edit  -> anyone with the link
+                         private            -> remove link sharing
+                         email[:role]       -> share with that account
+
+:Gdoc export [fmt]       pdf (default), docx, odt, txt, html, epub.
+
+:Gdoc link {url}         Link the file to an existing doc.
+:Gdoc unlink             Remove the mapping (the doc is untouched).
+
+:Gdoc watch [all|stop]   Live sync this file (or every linked file) in the
+                         background: remote edits auto-pull, local edits
+                         auto-push. Events surface as notifications.
+
+:Gdoc doctor             Full CLI diagnostics in a floating window.
+
+==============================================================================
+4. CONFIGURATION                                       *gdoc-sync-configuration*
+
+setup() is optional; defaults shown. >lua
+
+  require("gdoc-sync").setup({
+    cmd = "gdoc-sync",          -- CLI executable
+    config_file = nil,          -- passed as --config
+    create_args = {},           -- extra flags for every create
+    open_after_create = false,  -- open browser after :Gdoc create
+    statusline_icon = "󰈙 gdoc",
+    watch_interval = 30,        -- :Gdoc watch poll seconds
+  })
+<
+==============================================================================
+5. STATUSLINE                                             *gdoc-sync-statusline*
+
+require("gdoc-sync.statusline").component() returns the configured icon when
+the current buffer is linked to a doc (plus " (watching)" during :Gdoc watch)
+and "" otherwise. It reads an in-memory cache fed by `status --json`, so it
+is safe to call on every redraw. >lua
+
+  -- lualine
+  sections = { lualine_x = { require("gdoc-sync.statusline").component } }
+<
+vim:tw=78:ts=8:noet:ft=help:norl:

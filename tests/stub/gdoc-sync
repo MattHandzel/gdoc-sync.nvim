@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+# Fake gdoc-sync CLI for plugin tests. Records every invocation's argv to
+# $STUB_LOG (one line per call) and emits canned outputs, so plugin behavior
+# can be asserted without the network or a real Google account.
+set -u
+
+printf '%s\n' "$*" >> "${STUB_LOG:?STUB_LOG not set}"
+
+# Skip a --config PATH prefix so tests cover the config_file option too.
+if [ "${1:-}" = "--config" ]; then shift 2; fi
+
+case "${1:-}" in
+  status)
+    if [ "${2:-}" = "--json" ]; then
+      cat <<EOF
+{
+  "config": "/tmp/stub-config.yaml",
+  "state": "/tmp/stub-state.yaml",
+  "links": [
+    {"file": "${STUB_LINKED:-/nonexistent}", "doc_id": "STUBDOC123", "exists": true, "remote": "unchecked"}
+  ]
+}
+EOF
+    else
+      echo "1 linked file(s):"
+      echo "  ${STUB_LINKED:-/nonexistent}"
+    fi
+    ;;
+  create)
+    echo "Created doc: https://docs.google.com/document/d/STUBNEWDOC456/edit"
+    ;;
+  push)
+    has_yes=no
+    for a in "$@"; do [ "$a" = "--yes" ] && has_yes=yes; done
+    if [ "${STUB_DRIFT:-0}" = "1" ] && [ "$has_yes" = "no" ]; then
+      echo "WARNING: Google Doc has been modified since last pull."
+      echo "Refusing to overwrite non-interactively without --yes." >&2
+      exit 2
+    fi
+    echo "Pushed."
+    ;;
+  pull)
+    # Last arg is the file; simulate the CLI rewriting it.
+    for f in "$@"; do :; done
+    echo "remote content line" > "$f"
+    echo "Pulled."
+    ;;
+  diff)
+    echo "--- remote:Stub Doc"
+    echo "+++ local:file.md"
+    echo "-old line"
+    echo "+new line"
+    exit 1
+    ;;
+  open)
+    echo "https://docs.google.com/document/d/STUBDOC123/edit"
+    ;;
+  doctor)
+    echo " ✓ python         3.12.0"
+    echo " ✓ pandoc         stub"
+    echo "All good."
+    ;;
+  --version)
+    echo "gdoc-sync 0.5.2-stub"
+    ;;
+  *)
+    echo "stub: ${1:-} ok"
+    ;;
+esac
