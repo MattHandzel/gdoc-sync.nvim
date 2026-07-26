@@ -209,6 +209,20 @@ check(cfg.options.auto_watch == true, "auto_watch is configurable")
 check(cfg.options.auto_write == false, "auto_write is configurable")
 check(cfg.options.safe_reload == true, "safe_reload defaults on")
 check(cfg.options.cmd == "gdoc-sync", "defaults survive a partial setup()")
+
+-- Regression: :Gdoc used to call setup({}) on first use because setup() never
+-- claimed the "already initialised" flag, silently replacing the user's whole
+-- configuration with defaults — including `cmd`, so it would run whatever
+-- gdoc-sync happened to be on $PATH.
+vim.g._gdoc_sync_setup_done = nil
+gdoc.setup({ cmd = "/custom/path/gdoc-sync", watch_interval = 5 })
+check(vim.g._gdoc_sync_setup_done == 1, "setup() claims the initialised flag")
+pcall(vim.cmd, "Gdoc bogus") -- runs ensure_setup()
+check(cfg.options.cmd == "/custom/path/gdoc-sync",
+  "a :Gdoc command does not reset the configured cmd", cfg.options.cmd)
+check(cfg.options.watch_interval == 5,
+  "a :Gdoc command does not reset watch_interval", tostring(cfg.options.watch_interval))
+
 cfg.setup({})
 
 os.exit(failed == 0 and 0 or 1)

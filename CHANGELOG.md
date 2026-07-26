@@ -43,6 +43,16 @@ remaining ways to lose work lived:
 - `:checkhealth` reports the CLI version, running watchers, and unresolved
   conflicts, and errors on a pre-0.6 CLI.
 
+### Fixed
+
+- **`setup()` was silently discarded.** `:Gdoc` calls an `ensure_setup()` guard
+  that initialises the plugin if a flag is unset — but `setup()` never claimed
+  that flag, so the first `:Gdoc` command called `setup({})` and replaced the
+  user's entire configuration with the defaults. A configured `cmd` fell back
+  to whatever `gdoc-sync` was on `$PATH`, and `watch_interval`/`auto_watch`/
+  `notify` never took effect. Present since 0.1.0; found by driving the plugin
+  against a real CLI, where it silently ran an old binary.
+
 ### Changed
 
 - `watch_interval` default 30s → 15s.

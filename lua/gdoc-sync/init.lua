@@ -38,6 +38,12 @@ end
 
 function M.setup(opts)
   local cfg = require("gdoc-sync.config").setup(opts)
+  -- Claim the flag :Gdoc uses to decide whether the plugin still needs
+  -- initialising. Without this, the first :Gdoc command would call setup({})
+  -- and silently replace everything configured here with the defaults — so a
+  -- configured `cmd` would fall back to whatever `gdoc-sync` is on $PATH, and
+  -- auto_watch/watch_interval/notify would never take effect.
+  vim.g._gdoc_sync_setup_done = 1
   -- Warm the linked-file cache so the statusline is accurate soon after
   -- startup; a plain (non --remote) status never touches the network.
   vim.defer_fn(function()
