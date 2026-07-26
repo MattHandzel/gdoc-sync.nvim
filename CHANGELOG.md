@@ -1,5 +1,54 @@
 # Changelog
 
+## 0.2.0 (2026-07-26)
+
+Requires gdoc-sync CLI >= 0.6 (`:checkhealth gdoc-sync` will tell you).
+
+### Live sync no longer loses edits
+
+The CLI's 0.6 sync engine merges the two sides instead of overwriting one of
+them. This release supplies the editor half of that safety, which is where the
+remaining ways to lose work lived:
+
+- **A modified buffer is never reloaded.** Previously a `checktime` on every
+  watch event could pull a rewritten file into the buffer. Now, if the watcher
+  merges remote changes into a file whose buffer has unsaved edits, the buffer
+  is left alone and you are told — `:Gdoc conflict` diffs buffer against disk
+  so you can keep both. `safe_reload = false` opts out.
+- **Watched buffers are auto-written** on `CursorHold`, `InsertLeave` and
+  `FocusLost`. The CLI reconciles the file on disk, so unsaved buffer edits
+  were invisible to it: a remote change got merged into a file lacking them,
+  and the next `:w` clobbered the merge, which the following tick pushed —
+  erasing the other side remotely. `auto_write = false` opts out.
+- Watch events are read from `watch --json` rather than scraped from log
+  prose, so the plugin reloads exactly when the file changed and knows when a
+  conflict was raised. Quiet ticks no longer notify at all (`notify` setting).
+- Cursor position and window view survive a reload.
+
+### New
+
+- `:Gdoc sync [--adopt-local|--adopt-remote|--no-push|--force]` — one safe
+  two-way merge.
+- `:Gdoc conflict` — jump to the first merge marker, or diff buffer ↔ disk.
+- `:Gdoc resolve` — clear the conflict flag and resume syncing.
+- `:Gdoc restore [N]` — list or restore the CLI's automatic backups.
+- `:Gdoc watch status` — list running watchers; watchers now stop when their
+  buffer closes and when Neovim exits.
+- `auto_watch = true | "prompt"` — start watching linked markdown buffers as
+  you open them.
+- Comment commands: `:Gdoc comment`, `:Gdoc reply`, `:Gdoc resolvecomment`
+  insert the CriticMarkup markers the CLI round-trips; `:Gdoc comments` puts
+  every comment in the buffer into the quickfix list.
+- `clipboard` setting to force or suppress the URL copy on `:Gdoc create`.
+- `:checkhealth` reports the CLI version, running watchers, and unresolved
+  conflicts, and errors on a pre-0.6 CLI.
+
+### Changed
+
+- `watch_interval` default 30s → 15s.
+- `:Gdoc pull` offers "merge instead" when the buffer has unsaved changes, and
+  mentions that the previous version was backed up.
+
 ## 0.1.0 (2026-07-17)
 
 First release.

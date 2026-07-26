@@ -10,7 +10,8 @@ CONTENTS                                                    *gdoc-sync-contents*
   2. Requirements ................ |gdoc-sync-requirements|
   3. Commands .................... |gdoc-sync-commands|
   4. Configuration ............... |gdoc-sync-configuration|
-  5. Statusline .................. |gdoc-sync-statusline|
+  5. Two-way sync ................ |gdoc-sync-sync|
+  6. Statusline .................. |gdoc-sync-statusline|
 
 ==============================================================================
 1. INTRODUCTION                                         *gdoc-sync-introduction*
@@ -25,7 +26,7 @@ on the network.
 2. REQUIREMENTS                                         *gdoc-sync-requirements*
 
 - Neovim >= 0.9
-- gdoc-sync CLI >= 0.5 on $PATH, authenticated (`gdoc-sync auth`)
+- gdoc-sync CLI >= 0.6 on $PATH, authenticated (`gdoc-sync auth`)
 
 Run |:checkhealth| gdoc-sync to verify both.
 
@@ -64,9 +65,27 @@ All commands operate on the current buffer's file.                     *:Gdoc*
 :Gdoc link {url}         Link the file to an existing doc.
 :Gdoc unlink             Remove the mapping (the doc is untouched).
 
-:Gdoc watch [all|stop]   Live sync this file (or every linked file) in the
-                         background: remote edits auto-pull, local edits
-                         auto-push. Events surface as notifications.
+:Gdoc comment [text]     Queue a new comment on the doc, anchored by the line
+                         above. Prompts if no text is given. Sent on push.
+:Gdoc reply [text]       Reply to the pulled comment above the cursor.
+:Gdoc resolvecomment     Resolve the pulled comment above the cursor.
+:Gdoc comments           Put every {>>...<<} marker in the buffer into the
+                         quickfix list.
+
+:Gdoc sync [flags]       Reconcile the file with its doc once — a three-way
+                         merge, so edits on both sides survive. Flags:
+                         --adopt-local, --adopt-remote, --no-push, --force.
+
+:Gdoc watch [all|stop|status]
+                         Live two-way sync in the background: the same
+                         reconcile on a timer. Events surface as
+                         notifications. See |gdoc-sync-sync|.
+
+:Gdoc conflict           Review this file's conflict: jump to the first merge
+                         marker, or diff the buffer against the file on disk.
+:Gdoc resolve            Clear the conflict flag and resume syncing.
+:Gdoc restore [N]        List the automatic backups, or restore the Nth
+                         (0 = newest).
 
 :Gdoc doctor             Full CLI diagnostics in a floating window.
 
@@ -80,12 +99,74 @@ setup() is optional; defaults shown. >lua
     config_file = nil,          -- passed as --config
     create_args = {},           -- extra flags for every create
     open_after_create = false,  -- open browser after :Gdoc create
+    clipboard = nil,            -- nil = CLI setting; false passes --no-copy
     statusline_icon = "󰈙 gdoc",
-    watch_interval = 30,        -- :Gdoc watch poll seconds
+
+    -- Live sync (see |gdoc-sync-sync|)
+    watch_interval = 15,        -- poll seconds; nil uses the CLI's setting
+    auto_watch = false,         -- true | "prompt" | false
+    auto_write = true,          -- flush watched buffers to disk while editing
+    safe_reload = true,         -- never reload a buffer with unsaved changes
+    notify = "changes",         -- "all" | "changes" | "errors"
   })
 <
+							*gdoc-sync-auto-watch*
+auto_watch starts a watcher for linked markdown buffers as you open them:
+
+  true       every linked buffer
+  "prompt"   ask the first time each file is opened in a session
+  false      never (default) — use :Gdoc watch by hand
+
+Watchers stop when the buffer is deleted and when Neovim exits.
+
 ==============================================================================
-5. STATUSLINE                                             *gdoc-sync-statusline*
+5. TWO-WAY SYNC                                                *gdoc-sync-sync*
+
+:Gdoc watch and :Gdoc sync merge rather than overwrite. Edits made in Google
+Docs and edits made here both survive, because the CLI stores a snapshot of
+each side at the last sync and merges against it. Only genuinely overlapping
+edits conflict.
+
+The plugin is responsible for the editor half of that safety:
+
+MODIFIED BUFFERS ARE NEVER RELOADED ~
+
+If the watcher merges remote changes into a file whose buffer has unsaved
+edits, the buffer is left alone and you are told. Use |:Gdoc| conflict to diff
+the buffer against the merged file on disk, then keep what you want.
+
+Setting safe_reload = false removes this guard. Don't.
+
+WATCHED BUFFERS ARE AUTO-WRITTEN ~
+
+The CLI reconciles the file as it exists ON DISK. Edits sitting unsaved in a
+buffer are invisible to it, so a remote change would be merged into a file
+that lacks them — and your next :write would then clobber the merge, which the
+following tick would push, erasing the other side's edits remotely.
+
+So while a buffer is watched it is written on CursorHold, CursorHoldI,
+InsertLeave and FocusLost. Only watched, linked, ordinary file buffers are
+touched. Set auto_write = false to opt out and save by hand instead.
+
+CONFLICTS ~
+
+A conflict writes git-style markers into the file and suspends syncing for it
+until you resolve it — it will not quietly overwrite the un-merged side while
+you decide.
+
+  :Gdoc conflict     jump to the first marker
+  (edit the file so only the text you want remains)
+  :Gdoc resolve      resume syncing
+
+BACKUPS ~
+
+Every write to a tracked file is backed up first. >
+
+  :Gdoc restore      list the backups
+  :Gdoc restore 0    restore the newest
+<
+==============================================================================
+6. STATUSLINE                                             *gdoc-sync-statusline*
 
 require("gdoc-sync.statusline").component() returns the configured icon when
 the current buffer is linked to a doc (plus " (watching)" during :Gdoc watch)

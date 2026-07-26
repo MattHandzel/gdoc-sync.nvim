@@ -19,4 +19,12 @@ export STUB_LINKED="$work/note.md"
 PATH="$PWD/tests/stub:$PATH" nvim --headless --clean -u tests/minimal_init.lua -l tests/test_stub.lua
 
 echo
+echo "== sync safety + events =="
+sync_work="$work/sync"
+mkdir -p "$sync_work"
+STUB_WORK="$sync_work" STUB_LINKED="$sync_work/note.md" \
+  PATH="$PWD/tests/stub:$PATH" \
+  nvim --headless --clean -u tests/minimal_init.lua -l tests/test_sync.lua
+
+echo
 echo "All tests passed."

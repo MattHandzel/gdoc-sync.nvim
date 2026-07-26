@@ -2,25 +2,35 @@
 
 local M = {}
 
--- subcommand -> { fn = handler name in init.lua, complete = candidates }
+-- subcommand -> { complete = candidates }; each name is a function in init.lua
 local subcommands = {
   create = { complete = { "--private", "--edit", "--view", "--open", "--title" } },
   push = { complete = { "--yes" } },
   pull = {},
+  sync = { complete = { "--adopt-local", "--adopt-remote", "--no-push", "--force" } },
+  watch = { complete = { "all", "stop", "status" } },
+  conflict = {},
+  resolve = {},
+  restore = {},
   status = { complete = { "--remote" } },
   diff = {},
   open = {},
   share = { complete = { "view", "comment", "edit", "private" } },
   export = { complete = { "pdf", "docx", "odt", "txt", "html", "epub" } },
+  comment = {},
+  reply = {},
+  resolvecomment = {},
+  comments = {},
   link = {},
   unlink = {},
-  watch = { complete = { "all", "stop" } },
   doctor = {},
 }
 
 local order = {
-  "create", "push", "pull", "status", "diff", "open", "share",
-  "export", "link", "unlink", "watch", "doctor",
+  "create", "push", "pull", "sync", "watch", "conflict", "resolve", "restore",
+  "status", "diff", "open", "share", "export",
+  "comment", "reply", "resolvecomment", "comments",
+  "link", "unlink", "doctor",
 }
 
 local function ensure_setup()
