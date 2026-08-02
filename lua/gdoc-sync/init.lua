@@ -245,7 +245,7 @@ function M.pull()
     return
   end
   local function do_pull()
-    cli().run({ "pull", file }, function(code, _, stderr)
+    cli().run({ "pull", file }, function(code, stdout, stderr)
       if code ~= 0 then
         notify("pull failed:\n" .. stderr, vim.log.levels.ERROR)
         return
@@ -253,6 +253,15 @@ function M.pull()
       require("gdoc-sync.buffer").reload(file)
       notify("pulled " .. vim.fn.fnamemodify(file, ":t")
         .. " (previous version backed up — :Gdoc restore)")
+      -- A successful pull can still be lossy: the Docs API cannot report what
+      -- an equation contains, so one the CLI could not match arrives as an
+      -- `[equation]` marker. It says so on stdout, which is otherwise
+      -- discarded — and a warning nobody sees is the same as no warning.
+      for line in (stdout or ""):gmatch("[^\n]+") do
+        if line:match("WARNING") then
+          notify(vim.trim(line), vim.log.levels.WARN)
+        end
+      end
       links().refresh()
     end)
   end

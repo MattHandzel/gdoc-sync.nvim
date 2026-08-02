@@ -96,6 +96,27 @@ check(wait_for(function()
 end), "pull reloads buffer from disk",
   vim.inspect(vim.api.nvim_buf_get_lines(0, 0, 1, false)))
 
+-- pull surfaces the CLI's lossy-equation warning. A pull that exits 0 can
+-- still have dropped math the Docs API refuses to describe; the plugin used to
+-- discard the CLI's stdout, so the warning reached nobody.
+local notes = {}
+local orig_notify = vim.notify
+vim.notify = function(msg, level)
+  table.insert(notes, { msg = tostring(msg), level = level })
+end
+vim.env.STUB_MATH_WARN = "1"
+vim.cmd("Gdoc pull")
+check(wait_for(function()
+  for _, n in ipairs(notes) do
+    if n.msg:find("equation") and n.level == vim.log.levels.WARN then
+      return true
+    end
+  end
+  return false
+end), "pull reports equations it could not match", vim.inspect(notes))
+vim.env.STUB_MATH_WARN = nil
+vim.notify = orig_notify
+
 -- diff: exit 1 + output opens a diff split
 vim.cmd("Gdoc diff")
 check(wait_for(function()

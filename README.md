@@ -11,6 +11,7 @@ Write in Neovim, share a real Google Doc, and pull your reviewers' comments back
 - 🔀 **`:Gdoc watch` / `:Gdoc sync`** — live **two-way** sync: edits made in Google Docs and edits made here are merged, not fought over. Unmergeable overlaps become visible conflicts, never silent overwrites
 - 🛟 **never loses work** — a buffer with unsaved changes is never reloaded out from under you, every write is backed up, and `:Gdoc restore` brings any version back
 - 📊 **`:Gdoc diff`** — unified diff of buffer vs. remote in a split
+- 🧮 **LaTeX** — `$x$` and `$$...$$` become real Google Docs equations, and survive the trip back; a formula the API can't describe is reported, never silently dropped
 - 💬 comment round-trip — reviewers' comments arrive as `{>>...<<}` markers on pull; `:Gdoc comment`/`reply`/`resolvecomment` write them back
 - 🩺 **`:checkhealth gdoc-sync`** + **`:Gdoc doctor`** — one-glance setup diagnostics
 - 📎 statusline component showing when a buffer is linked to a doc
@@ -18,7 +19,7 @@ Write in Neovim, share a real Google Doc, and pull your reviewers' comments back
 ## ⚡ Requirements
 
 - Neovim ≥ 0.9
-- The [gdoc-sync CLI](https://github.com/MattHandzel/gdoc-sync) ≥ 0.6 on your `$PATH`, authenticated (`gdoc-sync auth` — one-time [OAuth setup](https://github.com/MattHandzel/gdoc-sync/blob/main/docs/oauth-setup.md))
+- The [gdoc-sync CLI](https://github.com/MattHandzel/gdoc-sync) ≥ 0.6 on your `$PATH` (≥ 0.7 for the LaTeX round-trip), authenticated (`gdoc-sync auth` — one-time [OAuth setup](https://github.com/MattHandzel/gdoc-sync/blob/main/docs/oauth-setup.md))
 
 ## 📦 Installation
 

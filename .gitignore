@@ -1,2 +1,5 @@
 doc/tags
 *.log
+
+# Local scratch documents — never publish these to a public repo
+private-*.md

@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.0 (2026-08-02)
+
+Pairs with gdoc-sync CLI 0.7, where LaTeX equations stopped being deleted on
+pull. The editor half of that is small but load-bearing:
+
+- **A successful pull can still be lossy, and now says so.** The Docs API
+  cannot report what an equation contains, so one the CLI could not match
+  arrives as an `[equation]` marker. The CLI prints that warning on stdout —
+  which `:Gdoc pull` discarded outright, so it reached nobody. Warnings are now
+  surfaced as notifications.
+
 ## 0.2.0 (2026-07-26)
 
 Requires gdoc-sync CLI >= 0.6 (`:checkhealth gdoc-sync` will tell you).

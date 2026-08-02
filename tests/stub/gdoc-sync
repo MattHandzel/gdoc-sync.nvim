@@ -43,6 +43,11 @@ EOF
     # Last arg is the file; simulate the CLI rewriting it.
     for f in "$@"; do :; done
     echo "remote content line" > "$f"
+    # A pull that succeeds can still be lossy — the CLI reports unmatched
+    # equations on stdout, and the plugin must not swallow that.
+    if [ "${STUB_MATH_WARN:-0}" = "1" ]; then
+      echo "  WARNING: 2 equation(s) could not be matched to local LaTeX and are marked \`[equation]\`"
+    fi
     echo "Pulled."
     ;;
   diff)
